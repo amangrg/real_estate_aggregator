@@ -23,12 +23,11 @@ Implemented:
 - field-level conflict resolution with confidence labels and conflict preservation
 - permit and hazard flag generation
 - markdown brief generation
+- a CLI entrypoint that writes resolved JSON and markdown output files
 - unit tests for ingest, normalize, resolve, and summarize modules
 
 Not implemented yet:
 
-- a `main.py` CLI entrypoint
-- writing resolved JSON / markdown files to `output/`
 - live data connectors
 - a frontend
 
@@ -146,7 +145,26 @@ Current notable flags:
 
 ## How To Run
 
-There is no CLI wrapper yet. Use the library entrypoints directly:
+Generate outputs with:
+
+```bash
+python main.py
+```
+
+By default this writes:
+
+- `output/resolved_property.json`
+- `output/property_brief.md`
+
+The CLI also prints the property id, canonical address, and generated file locations.
+
+Optional arguments:
+
+```bash
+python main.py --data-dir data --output-dir output
+```
+
+If you want to use the lower-level library entrypoints directly:
 
 ```python
 from src.ingest import load_sources
@@ -163,14 +181,12 @@ print(resolved["property_id"])
 print(brief)
 ```
 
-If you want to persist outputs locally, write `resolved` as JSON and `brief` as markdown in a small wrapper script.
-
 ## Tests
 
 Run the full suite with:
 
 ```bash
-python -m unittest tests.test_ingest tests.test_normalize tests.test_resolve tests.test_summarize
+python -m unittest tests.test_ingest tests.test_normalize tests.test_resolve tests.test_summarize tests.test_main
 ```
 
 The current suite covers:
