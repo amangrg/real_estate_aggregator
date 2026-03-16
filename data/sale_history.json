@@ -1,0 +1,25 @@
+{
+  "source": "sale_history",
+  "source_id": "SALE-1428MAPLE",
+  "fetched_at": "2026-03-16T10:34:00Z",
+  "address": {
+    "street": "1428 Maple Creek Dr",
+    "city": "Austin",
+    "state": "TX",
+    "zip": "78748"
+  },
+  "sales": [
+    {
+      "date": "2019-06-14",
+      "price": 349000,
+      "buyer": "Maple Creek Holdings LLC",
+      "seller": "J. Carter and M. Carter"
+    },
+    {
+      "date": "2008-09-03",
+      "price": 228000,
+      "buyer": "J. Carter and M. Carter",
+      "seller": "Oakline Homes"
+    }
+  ]
+}

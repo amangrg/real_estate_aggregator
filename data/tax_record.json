@@ -1,0 +1,25 @@
+{
+  "source": "tax_record",
+  "source_id": "TRAVIS-PARCEL-0293847712",
+  "fetched_at": "2026-03-16T10:31:00Z",
+  "parcel_id": "0293847712",
+  "address": {
+    "street": "1428 Maple Creek Drive",
+    "city": "Austin",
+    "state": "TX",
+    "zip": "78748"
+  },
+  "owner_name": "Maple Creek Holdings LLC",
+  "assessed_value": 451200,
+  "annual_tax": 8935,
+  "beds": 3,
+  "baths": 2.0,
+  "sqft": 1836,
+  "lot_size_sqft": 7200,
+  "year_built": 1988,
+  "land_value": 175000,
+  "improvement_value": 276200,
+  "last_sale_date": "2019-06-14",
+  "last_sale_price": 349000,
+  "homestead_exemption": false
+}

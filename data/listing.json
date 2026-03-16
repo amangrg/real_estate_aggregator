@@ -1,0 +1,33 @@
+{
+  "source": "listing",
+  "source_id": "MLS-20491827",
+  "fetched_at": "2026-03-16T10:30:00Z",
+  "address": {
+    "street": "1428 Maple Creek Dr",
+    "city": "Austin",
+    "state": "TX",
+    "zip": "78748"
+  },
+  "property_type": "Single Family",
+  "status": "For Sale",
+  "list_price": 489000,
+  "beds": 3,
+  "baths": 2.0,
+  "sqft": 1842,
+  "lot_size_sqft": 7405,
+  "year_built": 1989,
+  "hoa_monthly": 45,
+  "days_on_market": 12,
+  "description": "Updated single-story home with renovated kitchen, quartz countertops, stainless appliances, and open living area. Seller states roof replaced in 2023 and HVAC updated in 2022.",
+  "features": [
+    "garage",
+    "fenced yard",
+    "renovated kitchen",
+    "fireplace"
+  ],
+  "schools": {
+    "elementary": "Cypress Oaks Elementary",
+    "middle": "Pecan Springs Middle",
+    "high": "Austin Ridge High"
+  }
+}

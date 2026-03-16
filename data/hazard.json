@@ -1,0 +1,26 @@
+{
+  "source": "hazard_service",
+  "source_id": "HZ-1428MAPLE-20260316",
+  "fetched_at": "2026-03-16T10:33:00Z",
+  "address": {
+    "street": "1428 Maple Creek Dr",
+    "city": "Austin",
+    "state": "TX",
+    "zip": "78748"
+  },
+  "flood": {
+    "zone": "X",
+    "risk_level": "Low",
+    "fema_required_insurance": false
+  },
+  "wildfire": {
+    "risk_level": "Low"
+  },
+  "heat": {
+    "risk_level": "Moderate"
+  },
+  "air_quality": {
+    "risk_level": "Low"
+  },
+  "insurance_note": "Estimated annual homeowners insurance may be above county median due to regional weather exposure."
+}
