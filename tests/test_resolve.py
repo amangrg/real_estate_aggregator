@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from src.ingest import load_sources
-from src.models import NormalizedSourceRecord, SourceMetadata
+from src.models import NormalizedPropertyFacts, NormalizedSourceRecord, SourceMetadata
 from src.normalize import normalize_sources
 from src.resolve import resolve_property
 
@@ -46,6 +46,7 @@ class TestResolve(unittest.TestCase):
         self.assertIn("Insurance costs may be elevated based on the hazard provider note.", messages)
         self.assertIn("attention", flag_types)
         self.assertIn("risk", flag_types)
+        self.assertEqual(resolved["hazards_summary"]["flood_risk"], "Low")
 
     def test_resolve_property_adds_missing_flags_for_unresolved_fields(self) -> None:
         normalized = {
@@ -61,6 +62,22 @@ class TestResolve(unittest.TestCase):
 
         self.assertIn("Missing resolved value for beds.", missing_messages)
         self.assertIn("Missing resolved value for annual tax.", missing_messages)
+
+    def test_resolve_property_marks_single_source_beds_as_medium_confidence(self) -> None:
+        normalized = {
+            "listing": NormalizedSourceRecord(
+                metadata=SourceMetadata(source="listing"),
+                facts=NormalizedPropertyFacts(
+                    beds=4,
+                    property_type="Single Family",
+                ),
+            ),
+        }
+
+        resolved = resolve_property(normalized)
+
+        self.assertEqual(resolved["resolved_facts"]["beds"]["value"], 4)
+        self.assertEqual(resolved["resolved_facts"]["beds"]["confidence"], "Medium")
 
 
 if __name__ == "__main__":

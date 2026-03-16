@@ -184,6 +184,7 @@ class TestNormalizedSchema(unittest.TestCase):
         self.assertEqual(record.address.street, "1428 Maple Creek Dr")
         self.assertEqual(record.facts.annual_tax, 8935)
         self.assertEqual(record.facts.last_sale_date, "2019-06-14")
+        self.assertEqual(record.address.canonical_line, "1428 Maple Creek Dr, Austin, TX 78748")
         self.assertEqual(
             record.raw_context["value_breakdown"]["improvement_value"],
             276200,

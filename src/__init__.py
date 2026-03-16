@@ -21,6 +21,7 @@ from .normalize import (
     normalize_tax_record,
 )
 from .resolve import resolve_property
+from .summarize import generate_markdown_brief
 
 __all__ = [
     "load_sources",
@@ -40,4 +41,5 @@ __all__ = [
     "normalize_sources",
     "normalize_tax_record",
     "resolve_property",
+    "generate_markdown_brief",
 ]
