@@ -22,6 +22,7 @@ from src.normalize import (
     normalize_listing,
     normalize_permit_record,
     normalize_sale_history,
+    normalize_sources,
     normalize_tax_record,
 )
 
@@ -164,80 +165,70 @@ class TestNormalizedSchema(unittest.TestCase):
             self.assertEqual(list(signature.parameters), ["raw"])
             self.assertIs(hints["return"], NormalizedSourceRecord)
 
-
-    def test_fixture_based_schema_smoke_shape_for_listing_and_tax(self) -> None:
+    def test_normalize_listing_maps_fixture_fields(self) -> None:
         listing = load_fixture("listing.json")
+        record = normalize_listing(listing)
+
+        self.assertEqual(record.metadata.source, "listing")
+        self.assertEqual(record.address.street, "1428 Maple Creek Dr")
+        self.assertEqual(record.address.canonical_line, "1428 Maple Creek Dr, Austin, TX 78748")
+        self.assertEqual(record.facts.property_type, "Single Family")
+        self.assertEqual(record.facts.list_price, 489000)
+        self.assertEqual(record.raw_context["features"][2], "renovated kitchen")
+
+    def test_normalize_tax_record_maps_fixture_fields(self) -> None:
         tax_record = load_fixture("tax_record.json")
+        record = normalize_tax_record(tax_record)
 
-        listing_record = NormalizedSourceRecord(
-            metadata=SourceMetadata(
-                source=listing["source"],
-                source_id=listing["source_id"],
-                fetched_at=listing["fetched_at"],
-            ),
-            address=NormalizedAddress(
-                street=listing["address"]["street"],
-                city=listing["address"]["city"],
-                state=listing["address"]["state"],
-                zip=listing["address"]["zip"],
-                canonical_line="1428 Maple Creek Dr, Austin, TX 78748",
-            ),
-            facts=NormalizedPropertyFacts(
-                property_type=listing["property_type"],
-                beds=listing["beds"],
-                baths=listing["baths"],
-                sqft=listing["sqft"],
-                lot_size_sqft=listing["lot_size_sqft"],
-                year_built=listing["year_built"],
-                list_price=listing["list_price"],
-                hoa_monthly=listing["hoa_monthly"],
-            ),
-            raw_context={
-                "description": listing["description"],
-                "features": listing["features"],
-            },
-        )
-        tax_record_record = NormalizedSourceRecord(
-            metadata=SourceMetadata(
-                source=tax_record["source"],
-                source_id=tax_record["source_id"],
-                fetched_at=tax_record["fetched_at"],
-            ),
-            address=NormalizedAddress(
-                street=tax_record["address"]["street"],
-                city=tax_record["address"]["city"],
-                state=tax_record["address"]["state"],
-                zip=tax_record["address"]["zip"],
-                canonical_line="1428 Maple Creek Dr, Austin, TX 78748",
-            ),
-            facts=NormalizedPropertyFacts(
-                beds=tax_record["beds"],
-                baths=tax_record["baths"],
-                sqft=tax_record["sqft"],
-                lot_size_sqft=tax_record["lot_size_sqft"],
-                year_built=tax_record["year_built"],
-                annual_tax=tax_record["annual_tax"],
-                assessed_value=tax_record["assessed_value"],
-                last_sale_date=tax_record["last_sale_date"],
-                last_sale_price=tax_record["last_sale_price"],
-            ),
-            raw_context={
-                "parcel_id": tax_record["parcel_id"],
-                "owner_name": tax_record["owner_name"],
-                "value_breakdown": {
-                    "land_value": tax_record["land_value"],
-                    "improvement_value": tax_record["improvement_value"],
-                },
-            },
-        )
-
-        self.assertEqual(listing_record.facts.property_type, "Single Family")
+        self.assertEqual(record.metadata.source, "tax_record")
+        self.assertEqual(record.address.street, "1428 Maple Creek Dr")
+        self.assertEqual(record.facts.annual_tax, 8935)
+        self.assertEqual(record.facts.last_sale_date, "2019-06-14")
         self.assertEqual(
-            listing_record.raw_context["features"],
-            ["garage", "fenced yard", "renovated kitchen", "fireplace"],
+            record.raw_context["value_breakdown"]["improvement_value"],
+            276200,
         )
-        self.assertEqual(tax_record_record.facts.annual_tax, 8935)
-        self.assertEqual(tax_record_record.raw_context["parcel_id"], "0293847712")
+
+    def test_normalize_other_sources_map_fixture_fields(self) -> None:
+        permit_record = normalize_permit_record(load_fixture("permit_record.json"))
+        hazard_record = normalize_hazard(load_fixture("hazard.json"))
+        sale_history_record = normalize_sale_history(load_fixture("sale_history.json"))
+        disclosure_record = normalize_disclosure(load_fixture("disclosure.json"))
+
+        self.assertEqual(len(permit_record.permits), 3)
+        self.assertEqual(permit_record.permits[2].status, "Open")
+        self.assertEqual(hazard_record.hazards.flood_zone, "X")
+        self.assertEqual(hazard_record.raw_context["insurance_note"][:9], "Estimated")
+        self.assertEqual(sale_history_record.facts.last_sale_price, 349000)
+        self.assertEqual(len(sale_history_record.sales), 2)
+        self.assertEqual(disclosure_record.disclosure.systems["roof"], "Replaced in 2023")
+        self.assertIn("not occupied", disclosure_record.raw_context["notes"])
+
+    def test_normalize_sources_returns_all_available_records(self) -> None:
+        raw_sources = {
+            "listing": load_fixture("listing.json"),
+            "tax_record": load_fixture("tax_record.json"),
+            "permit_record": load_fixture("permit_record.json"),
+            "hazard": load_fixture("hazard.json"),
+            "sale_history": load_fixture("sale_history.json"),
+            "disclosure": load_fixture("disclosure.json"),
+            "ignored_source": {"source": "ignored"},
+        }
+
+        normalized = normalize_sources(raw_sources)
+
+        self.assertEqual(
+            set(normalized),
+            {
+                "listing",
+                "tax_record",
+                "permit_record",
+                "hazard",
+                "sale_history",
+                "disclosure",
+            },
+        )
+        self.assertEqual(normalized["hazard"].hazards.heat_risk_level, "Moderate")
 
 
 if __name__ == "__main__":
