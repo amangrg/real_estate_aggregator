@@ -20,6 +20,7 @@ from .normalize import (
     normalize_sources,
     normalize_tax_record,
 )
+from .resolve import resolve_property
 
 __all__ = [
     "load_sources",
@@ -38,4 +39,5 @@ __all__ = [
     "normalize_sale_history",
     "normalize_sources",
     "normalize_tax_record",
+    "resolve_property",
 ]
