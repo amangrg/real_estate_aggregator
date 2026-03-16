@@ -1,250 +1,242 @@
 # Property Brief Prototype
 
-A lightweight prototype that turns scattered, inconsistent property data into a structured buyer-facing brief.
+A lightweight prototype that turns scattered, inconsistent property data into a structured buyer-facing property brief.
 
-## Problem
+## What It Does
 
-Information about a real estate property is often spread across listings, tax records, permit systems, hazard datasets, and disclosures. These sources are incomplete, inconsistent, and sometimes contradictory. Buyers should not have to manually reconcile all of this before deciding whether a home is worth pursuing.
+This repository demonstrates a small, explainable real-estate intelligence workflow for a single property:
 
-This prototype demonstrates the core workflow:
+1. load multiple source records from local JSON fixtures
+2. normalize each source into a common internal schema
+3. resolve overlapping facts with deterministic conflict rules
+4. generate a concise markdown brief that surfaces risks and uncertainty
 
-1. Ingest property data from multiple sources
-2. Normalize it into a common schema
-3. Resolve conflicts using explicit rules
-4. Generate a concise property brief with confidence labels, risks, and unresolved questions
+The emphasis is on trust and clarity rather than coverage or production integrations.
 
-## Scope
+## Current Status
 
-This is a time-boxed prototype, optimized for clarity and end-to-end functionality rather than breadth.
+Implemented:
 
-It uses sample JSON fixtures representing common data sources for a single property:
+- fixture ingestion from `data/`
+- typed normalized source models
+- source-specific normalization for listing, tax, permits, hazards, sale history, and disclosure
+- field-level conflict resolution with confidence labels and conflict preservation
+- permit and hazard flag generation
+- markdown brief generation
+- unit tests for ingest, normalize, resolve, and summarize modules
 
-- listing data
-- tax record
-- permit history
-- hazard/risk data
-- sale history
-- seller disclosure
+Not implemented yet:
 
-The goal is to show the core product logic, not production-scale integrations.
+- a `main.py` CLI entrypoint
+- writing resolved JSON / markdown files to `output/`
+- live data connectors
+- a frontend
 
 ## Repository Structure
 
 ```text
-property-brief/
-├── README.md
-├── SPECS.md
-├── requirements.txt
-├── main.py
-├── src/
-│   ├── ingest.py
-│   ├── normalize.py
-│   ├── resolve.py
-│   ├── summarize.py
-│   ├── models.py
-│   └── utils.py
-├── data/
-│   ├── listing.json
-│   ├── tax_record.json
-│   ├── permit_record.json
-│   ├── hazard.json
-│   ├── sale_history.json
-│   └── disclosure.json
-├── output/
-│   ├── resolved_property.json
-│   └── property_brief.md
-└── tests/
-    ├── test_normalize.py
-    ├── test_resolve.py
-    └── test_summarize.py
+real_estate_aggregator/
+|-- README.md
+|-- SPECS.md
+|-- data/
+|   |-- listing.json
+|   |-- tax_record.json
+|   |-- permit_record.json
+|   |-- hazard.json
+|   |-- sale_history.json
+|   `-- disclosure.json
+|-- src/
+|   |-- __init__.py
+|   |-- ingest.py
+|   |-- models.py
+|   |-- normalize.py
+|   |-- resolve.py
+|   |-- summarize.py
+|   `-- utils.py
+`-- tests/
+    |-- test_ingest.py
+    |-- test_normalize.py
+    |-- test_resolve.py
+    `-- test_summarize.py
 ```
 
-## How It Works
+## How The Pipeline Works
 
 ### 1. Ingest
-The system reads raw source files for the same property from the `data/` directory.
+
+`src/ingest.py` loads required and optional JSON fixtures from `data/`.
+
+- required: `listing.json`, `tax_record.json`, `permit_record.json`, `hazard.json`
+- optional: `sale_history.json`, `disclosure.json`
+
+The loader raises explicit errors for missing required files and malformed JSON.
 
 ### 2. Normalize
-Each source is converted into a common internal representation so downstream logic can work with consistent field names and types.
 
-Examples:
-- `sqft`
+`src/normalize.py` converts each source into the same `NormalizedSourceRecord` shape defined in `src/models.py`.
+
+Examples of normalized fields:
+
+- `property_type`
 - `beds`
 - `baths`
+- `sqft`
+- `lot_size_sqft`
 - `year_built`
+- `list_price`
 - `annual_tax`
-- `permits`
-- `hazards`
+- `last_sale_date`
+- `last_sale_price`
+
+Address normalization is intentionally simple and fixture-oriented. For example, `Drive` is canonicalized to `Dr` so the current listing and tax record collapse to the same canonical address.
 
 ### 3. Resolve
-When sources disagree, the system applies simple, explainable rules.
+
+`src/resolve.py` applies explicit source preference rules and preserves disagreement instead of hiding it.
 
 Examples:
-- prefer tax record for `year_built`
+
 - prefer listing for `list_price`
-- if two sources disagree on `sqft`, choose a preferred source but preserve the conflict
-- attach a confidence level and resolution reason
+- prefer tax record for `year_built`
+- prefer listing for `sqft`, but keep tax as a conflict source when values differ
+- prefer sale history for `last_sale_date` and `last_sale_price`
+
+Each resolved fact includes:
+
+- `value`
+- `confidence`
+- `sources`
+- `resolution_reason`
+- `conflict` when applicable
+
+The resolver also produces:
+
+- `permits_summary`
+- `hazards_summary`
+- `flags` for conflicts, open permits, risk signals, and missing important fields
 
 ### 4. Summarize
-The system generates:
-- a resolved property JSON
-- a buyer-facing markdown brief
 
-The brief includes:
+`src/summarize.py` turns the resolved property object into a reviewer-friendly markdown brief with:
+
+- title
 - executive summary
 - key facts
-- permit and renovation summary
+- renovation and permit history
 - risks / open questions
 - confidence notes
 
-## Why This Approach
+## Example From The Current Fixtures
 
-Given the short time-box, I focused on the highest-value vertical slice:
+The sample property resolves to:
 
-- clear multi-source ingestion
-- explicit normalization
-- conflict handling
-- trust-aware summary generation
+- canonical address: `1428 Maple Creek Dr, Austin, TX 78748`
+- property id: `1428-maple-creek-dr-austin-tx-78748`
+- 12 resolved facts
+- 6 flags
 
-I intentionally did not spend time on:
-- live MLS integrations
-- production databases
-- auth
-- frontend polish
-- LLM orchestration
-- large-scale crawling or scraping
+Current notable flags:
 
-Those would be the next steps in a real product, but they would distract from demonstrating the core decision-support logic here.
+- square footage conflict between listing and tax record
+- lot size conflict between listing and tax record
+- year built conflict between listing and tax record
+- one open electrical permit from 2021
+- moderate heat risk
+- elevated insurance-cost note from the hazard provider
 
-## Data Strategy
+## How To Run
 
-For this prototype, I used representative sample data files rather than live data integrations.
+There is no CLI wrapper yet. Use the library entrypoints directly:
 
-This was intentional:
-- it keeps the submission runnable and deterministic
-- it avoids API setup and licensing constraints
-- it allows the core reasoning pipeline to be evaluated directly
+```python
+from src.ingest import load_sources
+from src.normalize import normalize_sources
+from src.resolve import resolve_property
+from src.summarize import generate_markdown_brief
 
-In a real implementation, likely data sources would include:
-- county assessor / tax records
-- deed / ownership history
-- permit portals
-- hazard and geospatial datasets
-- MLS or licensed listing feeds
-- seller disclosures and inspection documents
+raw_sources = load_sources("data")
+normalized_sources = normalize_sources(raw_sources)
+resolved = resolve_property(normalized_sources)
+brief = generate_markdown_brief(resolved)
 
-## Trade-offs
-
-### What I optimized for
-- end-to-end completeness
-- explainability
-- readability
-- easy local execution
-- explicit handling of uncertainty
-
-### What I traded away
-- coverage across many property types
-- sophisticated entity resolution
-- probabilistic confidence modeling
-- UI polish
-- real-time updates
-- production-grade source reliability logic
-
-## Example Output
-
-### Example resolved fact
-- Listing sqft: 1842
-- Tax record sqft: 1836
-- Resolved value: 1842
-- Confidence: Medium
-- Resolution note: listing used because it is the more recent source, but conflict preserved
-
-### Example risk flag
-- Electrical permit from 2021 remains open
-
-### Example buyer action item
-- Verify whether the 2021 electrical permit has been finalized
-
-## How to Run
-
-### Install
-```bash
-pip install -r requirements.txt
+print(resolved["property_id"])
+print(brief)
 ```
 
-### Execute
-```bash
-python main.py
-```
-
-### Expected outputs
-The script should produce:
-- `output/resolved_property.json`
-- `output/property_brief.md`
+If you want to persist outputs locally, write `resolved` as JSON and `brief` as markdown in a small wrapper script.
 
 ## Tests
 
-Run:
+Run the full suite with:
+
 ```bash
-pytest
+python -m unittest tests.test_ingest tests.test_normalize tests.test_resolve tests.test_summarize
 ```
 
-Suggested tests:
-- field normalization works for each source
-- conflict resolution rules behave as expected
-- summary generation includes required sections
-- missing data does not crash the pipeline
+The current suite covers:
 
-## What I Would Do With More Time
-
-If I had more time, I would extend this in the following order:
-
-### 1. Stronger entity resolution
-Match records using normalized address, parcel ID, and geospatial signals.
-
-### 2. Better confidence scoring
-Use source reliability, agreement count, and recency to compute field-level confidence more systematically.
-
-### 3. Document parsing
-Extract key claims from disclosures, inspection reports, and permit PDFs.
-
-### 4. Source provenance in the brief
-Allow users to click into each claim and see exactly which source supported it.
-
-### 5. Lightweight frontend
-A simple web UI where a user selects a property and views the generated brief.
-
-### 6. Real data connectors
-Integrate with public county records and permit portals for a single jurisdiction as a first live slice.
+- required vs optional file handling
+- address canonicalization and source normalization
+- conflict resolution rules and flag generation
+- markdown brief structure and sparse-data behavior
 
 ## Design Notes
 
-The core product principle behind this prototype is:
+### Product Principle
 
-> do not hide uncertainty; make it visible and useful.
+The most important design choice in this prototype is simple:
 
-For a homebuyer, a trustworthy brief is not one that sounds certain. It is one that clearly distinguishes:
-- verified facts
-- likely facts
-- conflicting facts
-- missing facts
-- next things to verify
+> do not hide uncertainty; make it visible and useful
 
-That is the foundation this prototype is designed to demonstrate.
+A buyer-facing property brief should not flatten conflicts into a false sense of certainty. If sources disagree, the system should choose a value explicitly, explain why, and preserve the disagreement for review.
 
-## Suggested Commit History
+### Why Deterministic Rules
 
-A good commit sequence for this project would look like:
+This prototype uses deterministic rules instead of learned scoring because the goal is explainability.
 
-- `init repo and scaffold project structure`
-- `add sample multi-source property fixtures`
-- `implement normalized property schema`
-- `add source ingestion and normalization`
-- `implement field conflict resolution rules`
-- `generate markdown property brief`
-- `add tests for normalize and resolve modules`
-- `improve README and design notes`
+- a reviewer can understand every resolution decision quickly
+- test coverage is straightforward
+- the pipeline remains stable and reproducible
+- future confidence logic can build on a clear baseline instead of replacing hidden heuristics
+
+### Schema Strategy
+
+All source normalizers map into the same `NormalizedSourceRecord` envelope.
+
+That keeps downstream code simple:
+
+- the resolver reads the same field names regardless of source
+- source-specific extras remain available in `raw_context`
+- future sources can plug into the pipeline without changing the resolver contract
+
+### Trade-offs
+
+Optimized for:
+
+- clarity
+- explainability
+- local runnability
+- deterministic behavior
+- reviewer speed
+
+Intentionally not optimized for:
+
+- broad MLS-style schema coverage
+- multi-property entity resolution
+- probabilistic confidence scoring
+- live integrations
+- UI polish
+
+### What I Would Build Next
+
+The next practical steps would be:
+
+1. add a `main.py` entrypoint that writes `output/resolved_property.json` and `output/property_brief.md`
+2. include disclosure signals more directly in the resolved output and brief
+3. improve confidence scoring with recency and source-authority inputs
+4. support multiple properties and stronger address / parcel matching
+5. add a small reviewer UI on top of the resolved output
 
 ## Notes
 
-This repository is intended as a prototype submission for a time-boxed exercise. The main value is in the structure of the solution and the product reasoning behind it, not in broad real-estate data coverage.
+This repository is still a prototype submission, not a production system. The value is in the structure of the reasoning pipeline and the visibility of uncertainty, not in comprehensive real-estate coverage.
