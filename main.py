@@ -7,6 +7,7 @@ from pathlib import Path
 from src.ingest import load_sources
 from src.normalize import normalize_sources
 from src.resolve import resolve_property
+from src.server import create_frontend_server
 from src.summarize import generate_markdown_brief
 
 
@@ -42,17 +43,45 @@ def parse_args() -> argparse.Namespace:
         default="output",
         help="Directory where resolved JSON and markdown files will be written. Default: output",
     )
+    parser.add_argument(
+        "--serve",
+        action="store_true",
+        help="Start a local web frontend after generating outputs.",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host for the local frontend server. Default: 127.0.0.1",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port for the local frontend server. Default: 8000",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    resolved, _, json_path, markdown_path = build_outputs(args.data_dir, args.output_dir)
+    resolved, brief, json_path, markdown_path = build_outputs(args.data_dir, args.output_dir)
 
     print(f"Property ID: {resolved['property_id']}")
     print(f"Canonical address: {resolved['canonical_address']}")
     print(f"Resolved JSON: {json_path}")
     print(f"Markdown brief: {markdown_path}")
+
+    if args.serve:
+        server = create_frontend_server(args.host, args.port, resolved, brief)
+        host, port = server.server_address
+        print(f"Frontend URL: http://{host}:{port}")
+        print("Press Ctrl+C to stop the server.")
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            server.server_close()
     return 0
 
 

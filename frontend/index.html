@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Property Brief Viewer</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Property Intelligence Prototype</p>
+          <h1 id="hero-address">Loading property...</h1>
+          <p id="hero-summary" class="hero-summary">
+            Generating a buyer-facing view from resolved facts, risk flags, and permit history.
+          </p>
+          <div class="hero-actions">
+            <a class="hero-link" href="/resolved_property.json" target="_blank" rel="noreferrer">Open JSON</a>
+            <a class="hero-link" href="/property_brief.md" target="_blank" rel="noreferrer">Open Markdown</a>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-card">
+            <span class="stat-label">Flags</span>
+            <strong id="flag-count">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Resolved Facts</span>
+            <strong id="fact-count">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Property ID</span>
+            <strong id="property-id">-</strong>
+          </div>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <section class="panel panel-brief">
+          <div class="panel-header">
+            <h2>Buyer Brief</h2>
+            <p>Readable summary generated from the resolved property record.</p>
+          </div>
+          <div id="brief-content" class="brief-content"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Key Facts</h2>
+            <p>Resolved facts with confidence, source coverage, and conflict context.</p>
+          </div>
+          <div id="facts-grid" class="facts-grid"></div>
+        </section>
+
+        <section class="panel panel-flags">
+          <div class="panel-header">
+            <h2>Flags</h2>
+            <p>Issues that warrant review before a buyer relies on the brief.</p>
+          </div>
+          <div id="flags-list" class="flag-list"></div>
+        </section>
+
+        <section class="panel panel-permits">
+          <div class="panel-header">
+            <h2>Permits</h2>
+            <p>Permit history and currently open work items.</p>
+          </div>
+          <div id="permits-content" class="timeline-list"></div>
+        </section>
+
+        <section class="panel panel-hazards">
+          <div class="panel-header">
+            <h2>Hazards</h2>
+            <p>Insurance and environmental signals surfaced from the hazard feed.</p>
+          </div>
+          <div id="hazards-grid" class="hazards-grid"></div>
+        </section>
+
+        <section class="panel panel-json">
+          <div class="panel-header">
+            <h2>Resolved JSON</h2>
+            <p>The exact payload used to render the brief and fact cards.</p>
+          </div>
+          <pre id="json-viewer" class="json-viewer"></pre>
+        </section>
+      </main>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

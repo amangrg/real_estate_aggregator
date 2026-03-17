@@ -24,12 +24,12 @@ Implemented:
 - permit and hazard flag generation
 - markdown brief generation
 - a CLI entrypoint that writes resolved JSON and markdown output files
+- a local web frontend for browsing the generated property brief and resolved facts
 - unit tests for ingest, normalize, resolve, and summarize modules
 
 Not implemented yet:
 
 - live data connectors
-- a frontend
 
 ## Repository Structure
 
@@ -37,6 +37,10 @@ Not implemented yet:
 real_estate_aggregator/
 |-- README.md
 |-- SPECS.md
+|-- frontend/
+|   |-- index.html
+|   |-- app.js
+|   `-- styles.css
 |-- data/
 |   |-- listing.json
 |   |-- tax_record.json
@@ -54,8 +58,10 @@ real_estate_aggregator/
 |   `-- utils.py
 `-- tests/
     |-- test_ingest.py
+    |-- test_main.py
     |-- test_normalize.py
     |-- test_resolve.py
+    |-- test_server.py
     `-- test_summarize.py
 ```
 
@@ -125,6 +131,22 @@ The resolver also produces:
 - risks / open questions
 - confidence notes
 
+### 5. Frontend
+
+`src/server.py` serves a small single-page frontend from `frontend/` and exposes:
+
+- `/api/property` for the resolved JSON payload
+- `/api/brief` for the generated markdown brief
+- `/resolved_property.json` and `/property_brief.md` for direct downloads
+
+The UI presents:
+
+- a headline property summary
+- resolved fact cards with confidence and conflict context
+- flags, permits, and hazards
+- the rendered buyer brief
+- the raw resolved JSON
+
 ## Example From The Current Fixtures
 
 The sample property resolves to:
@@ -164,6 +186,18 @@ Optional arguments:
 python main.py --data-dir data --output-dir output
 ```
 
+Run the frontend locally with:
+
+```bash
+python main.py --serve
+```
+
+Custom host and port:
+
+```bash
+python main.py --serve --host 127.0.0.1 --port 8000
+```
+
 If you want to use the lower-level library entrypoints directly:
 
 ```python
@@ -186,7 +220,7 @@ print(brief)
 Run the full suite with:
 
 ```bash
-python -m unittest tests.test_ingest tests.test_normalize tests.test_resolve tests.test_summarize tests.test_main
+python -m unittest tests.test_ingest tests.test_normalize tests.test_resolve tests.test_summarize tests.test_main tests.test_server
 ```
 
 The current suite covers:
@@ -195,6 +229,8 @@ The current suite covers:
 - address canonicalization and source normalization
 - conflict resolution rules and flag generation
 - markdown brief structure and sparse-data behavior
+- CLI output writing
+- frontend API and static asset serving
 
 ## Design Notes
 
@@ -247,11 +283,11 @@ Intentionally not optimized for:
 
 The next practical steps would be:
 
-1. add a `main.py` entrypoint that writes `output/resolved_property.json` and `output/property_brief.md`
-2. include disclosure signals more directly in the resolved output and brief
-3. improve confidence scoring with recency and source-authority inputs
-4. support multiple properties and stronger address / parcel matching
-5. add a small reviewer UI on top of the resolved output
+1. include disclosure signals more directly in the resolved output and brief
+2. improve confidence scoring with recency and source-authority inputs
+3. support multiple properties and stronger address / parcel matching
+4. support multiple properties in the frontend instead of a single fixture-backed property view
+5. add packaging or a small installer so the CLI and frontend are easier to launch for non-developers
 
 ## Notes
 
